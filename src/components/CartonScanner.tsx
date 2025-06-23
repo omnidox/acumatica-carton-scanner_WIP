@@ -174,7 +174,6 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
           {loading ? 'Loading...' : 'Fetch Carton'}
         </button>
         
-        {/* ERROR MESSAGE - BELOW THE CARTON NUMBER FIELD */}
         {error && (
           <div className="text-red-500 mt-2 text-center">
             {error}
@@ -207,7 +206,6 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
           <thead>
             <tr>
               <th className="border px-2 py-1">Inventory ID</th>
-              {/* <th className="border px-2 py-1">Description</th> */}
               <th className="border px-2 py-1">Expected Qty</th>
               <th className="border px-2 py-1">Scanned Qty</th>
               <th className="border px-2 py-1">Status</th>
@@ -220,7 +218,6 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
               return (
                 <tr key={item.inventory_id}>
                   <td className="border px-2 py-1">{item.inventory_id}</td>
-                  {/* <td className="border px-2 py-1">{item.description}</td> */}
                   <td className="border px-2 py-1">{item.expected_qty}</td>
                   <td className="border px-2 py-1">{scannedCount}</td>
                   <td className={`border px-2 py-1 ${status === 'over' ? 'bg-red-200' : status === 'missing' ? 'bg-yellow-200' : 'bg-green-200'}`}>
