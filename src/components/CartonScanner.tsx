@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 interface Item {
+  returned_carton_number: string;
   inventory_id: string;
   description: string;
   expected_qty: number;
@@ -23,7 +24,7 @@ async function fetchCartonInfo(cartonNumber: string) {
       'Accept': 'application/json',
     },
     body: JSON.stringify(body),
-    credentials: 'include', // If cookies/session are needed
+    credentials: 'include', // TODO:what is this? If cookies/session are needed
   });
 
   if (!response.ok) {
@@ -31,7 +32,7 @@ async function fetchCartonInfo(cartonNumber: string) {
     throw new Error(`Failed to fetch carton info: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
-  // Safe JSON parsing
+  // JSON parsing
   const responseText = await response.text();
   let data;
   try {
@@ -42,14 +43,28 @@ async function fetchCartonInfo(cartonNumber: string) {
     throw new Error(`Invalid carton response format: ${responseText.substring(0, 200)}...`);
   }
 
+  // Check if we have any items in the response
+  if (!data.GetCartonResult || data.GetCartonResult.length === 0) {
+    // No items found - this means the carton number doesn't exist
+    return {
+      returned_carton_number: '',
+      items: [],
+    };
+  }
+
   // Map API response to expected items format
-  const items = (data.GetCartonResult || []).map((item: any) => ({
+  const items = data.GetCartonResult.map((item: any) => ({
     inventory_id: item.InventoryID?.value || '',
-    description: 'N/A', // No description in API response
     expected_qty: item.Quantity?.value || 0,
+    returned_carton_number: item.Carton?.value || '',
   }));
+
+  // Check if the first item has a valid carton number
+  const firstItem = items[0];
+  const returnedCartonNumber = firstItem.returned_carton_number || '';
+
   return {
-    carton_number: cartonNumber,
+    returned_carton_number: returnedCartonNumber,
     items,
   };
 }
@@ -72,9 +87,30 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
     setExpectedItems([]);
     setScanned({});
     try {
+      console.log('Fetching carton:', cartonNumber);
       const data = await fetchCartonInfo(cartonNumber);
-      setExpectedItems(data.items);
+      console.log('API response:', data);
+      console.log('Returned carton number:', data.returned_carton_number);
+      console.log('Input carton number:', cartonNumber);
+      
+      if (data.returned_carton_number == cartonNumber) {
+        console.log('Carton numbers match - setting items');
+        setExpectedItems(data.items);
+      } 
+      else if (data.returned_carton_number == '') {
+        console.log('Empty carton number returned - showing error');
+        // No carton number found
+        setError('No carton number found.');
+        return;
+      }
+      else {
+        console.log('Carton numbers do not match - showing error');
+        // Error with carton number fetching
+        setError('Carton number does not match.');
+        return;
+      }
     } catch (e) {
+      console.error('Exception caught:', e);
       setError('Failed to fetch carton info.');
     } finally {
       setLoading(false);
@@ -111,14 +147,15 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
     }
   };
 
+  const handleCartonKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleFetchCarton();
+    }
+  };
+
   return (
     <div className="container mx-auto max-w-xl p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Carton Scanning</h1>
-        <button onClick={onLogout} className="bg-red-500 text-white px-4 py-2 rounded">
-          Logout
-        </button>
-      </div>
+      <h1 className="text-xs font-bold mb-4">Carton Scanning</h1>
       
       <div className="mb-4">
         <input
@@ -126,6 +163,7 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
           placeholder="Scan carton number"
           value={cartonNumber}
           onChange={(e) => setCartonNumber(e.target.value)}
+          onKeyDown={handleCartonKeyDown}
           className="border p-2 mr-2 w-full mb-2"
         />
         <button 
@@ -135,6 +173,13 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
         >
           {loading ? 'Loading...' : 'Fetch Carton'}
         </button>
+        
+        {/* ERROR MESSAGE - BELOW THE CARTON NUMBER FIELD */}
+        {error && (
+          <div className="text-red-500 mt-2 text-center">
+            {error}
+          </div>
+        )}
       </div>
       
       {expectedItems.length > 0 && (
@@ -157,14 +202,12 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
         </div>
       )}
       
-      {error && <div className="text-red-500 mb-2">{error}</div>}
-      
       {expectedItems.length > 0 && (
         <table className="w-full border mt-4">
           <thead>
             <tr>
               <th className="border px-2 py-1">Inventory ID</th>
-              <th className="border px-2 py-1">Description</th>
+              {/* <th className="border px-2 py-1">Description</th> */}
               <th className="border px-2 py-1">Expected Qty</th>
               <th className="border px-2 py-1">Scanned Qty</th>
               <th className="border px-2 py-1">Status</th>
@@ -177,7 +220,7 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
               return (
                 <tr key={item.inventory_id}>
                   <td className="border px-2 py-1">{item.inventory_id}</td>
-                  <td className="border px-2 py-1">{item.description}</td>
+                  {/* <td className="border px-2 py-1">{item.description}</td> */}
                   <td className="border px-2 py-1">{item.expected_qty}</td>
                   <td className="border px-2 py-1">{scannedCount}</td>
                   <td className={`border px-2 py-1 ${status === 'over' ? 'bg-red-200' : status === 'missing' ? 'bg-yellow-200' : 'bg-green-200'}`}>

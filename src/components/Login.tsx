@@ -54,27 +54,6 @@ async function loginToAcumatica(username: string, password: string, tenant: stri
   return result;
 }
 
-// Test function to check if the proxy is working
-async function testProxyConnection() {
-  try {
-    console.log('Testing proxy connection...');
-    const response = await fetch('/api/acumatica/AcumaticaERP/entity/auth/login', {
-      method: 'OPTIONS',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-    });
-    console.log('Proxy test response status:', response.status);
-    const text = await response.text();
-    console.log('Proxy test response:', text.substring(0, 500));
-    return response.status < 500; // Consider any non-server error as "working"
-  } catch (error) {
-    console.error('Proxy test failed:', error);
-    return false;
-  }
-}
-
 interface LoginProps {
   onLoginSuccess: () => void;
 }
@@ -87,6 +66,11 @@ export default function Login({ onLoginSuccess }: LoginProps) {
   const [loginError, setLoginError] = useState('');
 
   const handleLogin = async () => {
+    if (!username.trim() || !password.trim()) {
+      setLoginError('Please enter both username and password.');
+      return;
+    }
+
     setLoginLoading(true);
     setLoginError('');
     try {
@@ -103,17 +87,9 @@ export default function Login({ onLoginSuccess }: LoginProps) {
     }
   };
 
-  const handleTestConnection = async () => {
-    setLoginError('');
-    try {
-      const isWorking = await testProxyConnection();
-      if (isWorking) {
-        setLoginError('Connection test successful! Proxy is working.');
-      } else {
-        setLoginError('Connection test failed. Check proxy configuration.');
-      }
-    } catch (e) {
-      setLoginError(`Connection test error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleLogin();
     }
   };
 
@@ -126,6 +102,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="border p-2 mr-2 mb-2 w-full"
         />
         <input
@@ -133,6 +110,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="border p-2 mr-2 mb-2 w-full"
         />
         <input
@@ -140,25 +118,18 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           placeholder="Tenant"
           value={tenant}
           onChange={(e) => setTenant(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="border p-2 mr-2 mb-2 w-full"
         />
-        <div className="flex gap-2">
-          <button 
-            onClick={handleLogin} 
-            className="bg-blue-500 text-white px-4 py-2 rounded flex-1"
-            disabled={loginLoading}
-          >
-            {loginLoading ? 'Logging in...' : 'Login'}
-          </button>
-          <button 
-            onClick={handleTestConnection} 
-            className="bg-gray-500 text-white px-4 py-2 rounded"
-          >
-            Test Connection
-          </button>
-        </div>
+        <button 
+          onClick={handleLogin} 
+          className="bg-blue-500 text-white px-4 py-2 rounded w-full text-sm"
+          disabled={loginLoading}
+        >
+          {loginLoading ? 'Logging in...' : 'Login'}
+        </button>
       </div>
-      {loginError && <div className="text-red-500 mb-2">{loginError}</div>}
+      {loginError && <div className="text-red-500 mb-2 text-center">{loginError}</div>}
     </div>
   );
 } 

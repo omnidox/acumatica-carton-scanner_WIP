@@ -16,11 +16,31 @@ function App() {
 
   return (
     <div className="App">
-      {isLoggedIn ? (
-        <CartonScanner onLogout={handleLogout} />
-      ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      )}
+      {/* Header with Login/Logout in upper right */}
+      <div className="bg-gray-100 border-b p-4">
+        <div className="container mx-auto flex justify-between items-center">
+          <h1 className="text-xs font-bold">Acumatica Carton Scanner</h1>
+          {isLoggedIn ? (
+            <button 
+              onClick={handleLogout} 
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm"
+            >
+              Logout
+            </button>
+          ) : (
+            <div className="text-gray-600 text-sm">Please login to continue</div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto p-4">
+        {isLoggedIn ? (
+          <CartonScanner onLogout={handleLogout} />
+        ) : (
+          <Login onLoginSuccess={handleLoginSuccess} />
+        )}
+      </div>
     </div>
   );
 }
