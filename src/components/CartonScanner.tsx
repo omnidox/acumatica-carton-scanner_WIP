@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import './CartonScanner.css';
 
 interface CartonItem {
   returned_carton_number: string;
@@ -77,6 +78,10 @@ export default function CartonScanner() {
   const [inputBarcode, setInputBarcode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lastScannedItem, setLastScannedItem] = useState<string | null>(null);
+
+  // Refs for scrolling to items
+  const itemRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
 
   // Event handlers
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -99,9 +104,18 @@ export default function CartonScanner() {
     return 'ok';
   };
 
+  // Helper function for status styling
+  const getStatusClass = (status: string) => {
+    const statusClasses = {
+      over: 'carton-status-over',
+      missing: 'carton-status-missing', 
+      ok: 'carton-status-ok'
+    };
+    return statusClasses[status as keyof typeof statusClasses];
+  };
+
   // Scan barcode and update scanned count
   const handleScan = () => {
-
     if (!inputBarcode) return;
 
     // Find if barcode matches an expected item
@@ -117,9 +131,35 @@ export default function CartonScanner() {
       ...prev,
       [inputBarcode]: (prev[inputBarcode] || 0) + 1,
     }));
+    
+    // Set the last scanned item for highlighting and scrolling
+    setLastScannedItem(inputBarcode);
     setInputBarcode('');
     setError('');
   };
+
+  // Effect to scroll to the last scanned item
+  useEffect(() => {
+    if (lastScannedItem && itemRefs.current[lastScannedItem]) {
+      const element = itemRefs.current[lastScannedItem];
+      if (element) {
+        // Scroll the element into view with smooth behavior
+        element.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center',
+          inline: 'nearest'
+        });
+        
+        // Add a temporary highlight class
+        element.classList.add('carton-item-highlight');
+        
+        // Remove the highlight after 2 seconds
+        setTimeout(() => {
+          element.classList.remove('carton-item-highlight');
+        }, 2000);
+      }
+    }
+  }, [lastScannedItem]);
 
   const fetchCartonDetails = async () => {
     if (cartonNumber == '') {
@@ -159,48 +199,46 @@ export default function CartonScanner() {
 
   // Render
   return (
-    <div className="container mx-auto max-w-xl p-4">      
-      <div className="mb-4 flex gap-2">
+    <div className="carton-scanner-container">      
+      <div className="flex gap-2">
         <input
           type="text"
           placeholder="Scan carton number"
           value={cartonNumber}
           onChange={(e) => setCartonNumber(e.target.value)}
-          onKeyDown={(e) =>handleCartonScanKeyDown(e.key)}
-          className="border p-2 mb-2"
-          style={{ width: 250 }}
+          onKeyDown={(e) => handleCartonScanKeyDown(e.key)}
+          className="carton-input"
           autoFocus
         />
         <button 
           onClick={fetchCartonDetails} 
-          className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition-colors mb-2"
+          className="carton-button-primary"
           disabled={loading}
-          style={{ width: 120 }}
         >
           {loading ? 'Loading...' : 'Fetch Carton'}
         </button>
       </div>
+
       {error && (
-        <div className="text-red-500 mt-2 text-center">
+        <div className="carton-error">
           {error}
         </div>
       )}
+
       {cartonItems.length > 0 && (
-        <div className="mb-4 flex gap-2">
+        <div className="flex gap-2">
           <input
             type="text"
             placeholder="Scan barcode"
             value={inputBarcode}
             onChange={(e) => setInputBarcode(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="border p-2 mb-2"
-            style={{ width: 250 }}
+            className="carton-input"
             autoFocus
           />
           <button 
             onClick={handleScan} 
-            className="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition-colors mb-2"
-            style={{ width: 120 }}
+            className="carton-button-success"
           >
             Scan
           </button>
@@ -208,43 +246,40 @@ export default function CartonScanner() {
       )}
       
       {cartonItems.length > 0 && (
-        <table className="w-full border mt-4">
-          <thead>
-            <tr>
-              <th className="border px-2 py-1">InventoryID</th>
-              <th className="border px-2 py-1">Quantity</th>
-              <th className="border px-2 py-1">Scanned Quantity</th>
-              <th className="border px-2 py-1">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cartonItems.map((item) => {
-              const scannedCount = scanned[item.inventory_id] || 0;
-              const status = getStatus(item);
-              return (
-                <tr key={item.inventory_id}>
-                  <td className="border px-2 py-1">{item.inventory_id}</td>
-                  <td className="border px-2 py-1">{item.expected_qty}</td>
-                  <td className="border px-2 py-1">{scannedCount}</td>
-                  <td
-                    className="border px-2 py-1"
-                    style={{
-                      backgroundColor:
-                        status === 'over'
-                          ? '#fecaca' // Tailwind bg-red-200
-                          : status === 'missing'
-                          ? '#fef08a' // Tailwind bg-yellow-200
-                          : '#bbf7d0', // Tailwind bg-green-200
-
+        <div className="overflow-x-auto">
+          <table className="carton-table">
+            <thead className="carton-table-header">
+              <tr>
+                <th className="carton-table-header-cell">InventoryID</th>
+                <th className="carton-table-header-cell">Quantity</th>
+                <th className="carton-table-header-cell">Scanned Quantity</th>
+                <th className="carton-table-header-cell">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cartonItems.map((item) => {
+                const scannedCount = scanned[item.inventory_id] || 0;
+                const status = getStatus(item);
+                return (
+                  <tr 
+                    key={item.inventory_id} 
+                    className="carton-table-row"
+                    ref={(el) => {
+                      itemRefs.current[item.inventory_id] = el;
                     }}
                   >
-                    {status === 'over' ? 'Over-Scan' : status === 'missing' ? 'Missing' : 'OK'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    <td className="carton-table-cell">{item.inventory_id}</td>
+                    <td className="carton-table-cell">{item.expected_qty}</td>
+                    <td className="carton-table-cell">{scannedCount}</td>
+                    <td className={getStatusClass(status)}>
+                      {status === 'over' ? 'Over-Scan' : status === 'missing' ? 'Missing' : 'OK'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
