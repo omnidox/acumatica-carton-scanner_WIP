@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-interface Item {
+interface CartonItem {
   returned_carton_number: string;
   inventory_id: string;
   description: string;
@@ -8,7 +8,7 @@ interface Item {
 }
 
 // API call to fetch carton information
-async function fetchCartonInfo(cartonNumber: string) {
+async function fetchCartonDetailsInfo(cartonNumber: string) {
   const url =
     '/api/acumatica/AcumaticaERP/entity/CartonValidation/24.200.001/Carton?$expand=GetCartonResult';
   const body = {
@@ -69,43 +69,83 @@ async function fetchCartonInfo(cartonNumber: string) {
   };
 }
 
-interface CartonScannerProps {
-  onLogout: () => void;
-}
-
-export default function CartonScanner({ onLogout }: CartonScannerProps) {
+export default function CartonScanner() {
+  // State declarations
   const [cartonNumber, setCartonNumber] = useState('');
-  const [expectedItems, setExpectedItems] = useState<Item[]>([]);
+  const [cartonItems, setCartonItems] = useState<CartonItem[]>([]);
   const [scanned, setScanned] = useState<Record<string, number>>({});
   const [inputBarcode, setInputBarcode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleFetchCarton = async () => {
-    setLoading(true);
+  // Event handlers
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleScan();
+    }
+  };
+
+  const handleCartonScanKeyDown = (key: string) => {
+    if (key === 'Enter') {
+      fetchCartonDetails();
+    }
+  };
+
+  // Show status of scanned item
+  const getStatus = (item: CartonItem) => {
+    const scannedCount = scanned[item.inventory_id] || 0;
+    if (scannedCount > item.expected_qty) return 'over';
+    if (scannedCount < item.expected_qty) return 'missing';
+    return 'ok';
+  };
+
+  // Scan barcode and update scanned count
+  const handleScan = () => {
+
+    if (!inputBarcode) return;
+
+    // Find if barcode matches an expected item
+    const item = cartonItems.find((i) => i.inventory_id === inputBarcode);
+
+    if (!item) {
+      setError(`Unknown barcode: ${inputBarcode}`);
+      setInputBarcode('');
+      return;
+    }
+    
+    setScanned((prev) => ({
+      ...prev,
+      [inputBarcode]: (prev[inputBarcode] || 0) + 1,
+    }));
+    setInputBarcode('');
     setError('');
-    setExpectedItems([]);
+  };
+
+  const fetchCartonDetails = async () => {
+    if (cartonNumber == '') {
+      console.log('Empty carton number returned - showing error');
+      setError('No carton number found.');
+      return;
+    }
+    setError('');
+    setCartonItems([]);
     setScanned({});
     try {
       console.log('Fetching carton:', cartonNumber);
-      const data = await fetchCartonInfo(cartonNumber);
-      console.log('API response:', data);
-      console.log('Returned carton number:', data.returned_carton_number);
-      console.log('Input carton number:', cartonNumber);
+      setLoading(true);
+      const data = await fetchCartonDetailsInfo(cartonNumber);
+      
+      // console.log('API response:', data);
+      // console.log('Returned carton number:', data.returned_carton_number);
+      // console.log('Input carton number:', cartonNumber);
       
       if (data.returned_carton_number == cartonNumber) {
-        console.log('Carton numbers match - setting items');
-        setExpectedItems(data.items);
+        // console.log('Carton numbers match - setting items');
+        setCartonItems(data.items);
       } 
-      else if (data.returned_carton_number == '') {
-        console.log('Empty carton number returned - showing error');
-        // No carton number found
-        setError('No carton number found.');
-        return;
-      }
+
       else {
         console.log('Carton numbers do not match - showing error');
-        // Error with carton number fetching
         setError('Carton number does not match.');
         return;
       }
@@ -117,102 +157,68 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
     }
   };
 
-  const handleScan = () => {
-    if (!inputBarcode) return;
-    // Find if barcode matches an expected item
-    const item = expectedItems.find((i) => i.inventory_id === inputBarcode);
-    if (!item) {
-      setError(`Unknown barcode: ${inputBarcode}`);
-      setInputBarcode('');
-      return;
-    }
-    setScanned((prev) => ({
-      ...prev,
-      [inputBarcode]: (prev[inputBarcode] || 0) + 1,
-    }));
-    setInputBarcode('');
-    setError('');
-  };
-
-  const getStatus = (item: Item) => {
-    const scannedCount = scanned[item.inventory_id] || 0;
-    if (scannedCount > item.expected_qty) return 'over';
-    if (scannedCount < item.expected_qty) return 'missing';
-    return 'ok';
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleScan();
-    }
-  };
-
-  const handleCartonKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleFetchCarton();
-    }
-  };
-
+  // Render
   return (
-    <div className="container mx-auto max-w-xl p-4">
-      <h1 className="text-xs font-bold mb-4">Carton Scanning</h1>
-      
-      <div className="mb-4">
+    <div className="container mx-auto max-w-xl p-4">      
+      <div className="mb-4 flex gap-2">
         <input
           type="text"
           placeholder="Scan carton number"
           value={cartonNumber}
           onChange={(e) => setCartonNumber(e.target.value)}
-          onKeyDown={handleCartonKeyDown}
-          className="border p-2 mr-2 w-full mb-2"
+          onKeyDown={(e) =>handleCartonScanKeyDown(e.key)}
+          className="border p-2 mb-2"
+          style={{ width: 250 }}
+          autoFocus
         />
         <button 
-          onClick={handleFetchCarton} 
-          className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+          onClick={fetchCartonDetails} 
+          className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition-colors mb-2"
           disabled={loading}
+          style={{ width: 120 }}
         >
           {loading ? 'Loading...' : 'Fetch Carton'}
         </button>
-        
-        {error && (
-          <div className="text-red-500 mt-2 text-center">
-            {error}
-          </div>
-        )}
       </div>
-      
-      {expectedItems.length > 0 && (
-        <div className="mb-4">
+      {error && (
+        <div className="text-red-500 mt-2 text-center">
+          {error}
+        </div>
+      )}
+      {cartonItems.length > 0 && (
+        <div className="mb-4 flex gap-2">
           <input
             type="text"
             placeholder="Scan barcode"
             value={inputBarcode}
             onChange={(e) => setInputBarcode(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="border p-2 mr-2 w-full mb-2"
+            className="border p-2 mb-2"
+            style={{ width: 250 }}
             autoFocus
           />
           <button 
             onClick={handleScan} 
-            className="bg-green-500 text-white px-4 py-2 rounded w-full"
+            className="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 transition-colors mb-2"
+            style={{ width: 120 }}
           >
             Scan
           </button>
         </div>
       )}
       
-      {expectedItems.length > 0 && (
+      {cartonItems.length > 0 && (
         <table className="w-full border mt-4">
           <thead>
             <tr>
-              <th className="border px-2 py-1">Inventory ID</th>
-              <th className="border px-2 py-1">Expected Qty</th>
-              <th className="border px-2 py-1">Scanned Qty</th>
+              <th className="border px-2 py-1">InventoryID</th>
+              <th className="border px-2 py-1">Quantity</th>
+              <th className="border px-2 py-1">Scanned Quantity</th>
               <th className="border px-2 py-1">Status</th>
             </tr>
           </thead>
           <tbody>
-            {expectedItems.map((item) => {
+            {cartonItems.map((item) => {
               const scannedCount = scanned[item.inventory_id] || 0;
               const status = getStatus(item);
               return (
@@ -220,7 +226,18 @@ export default function CartonScanner({ onLogout }: CartonScannerProps) {
                   <td className="border px-2 py-1">{item.inventory_id}</td>
                   <td className="border px-2 py-1">{item.expected_qty}</td>
                   <td className="border px-2 py-1">{scannedCount}</td>
-                  <td className={`border px-2 py-1 ${status === 'over' ? 'bg-red-200' : status === 'missing' ? 'bg-yellow-200' : 'bg-green-200'}`}>
+                  <td
+                    className="border px-2 py-1"
+                    style={{
+                      backgroundColor:
+                        status === 'over'
+                          ? '#fecaca' // Tailwind bg-red-200
+                          : status === 'missing'
+                          ? '#fef08a' // Tailwind bg-yellow-200
+                          : '#bbf7d0', // Tailwind bg-green-200
+
+                    }}
+                  >
                     {status === 'over' ? 'Over-Scan' : status === 'missing' ? 'Missing' : 'OK'}
                   </td>
                 </tr>

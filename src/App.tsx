@@ -33,10 +33,9 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="container mx-auto p-4">
         {isLoggedIn ? (
-          <CartonScanner onLogout={handleLogout} />
+          <CartonScanner />
         ) : (
           <Login onLoginSuccess={handleLoginSuccess} />
         )}
