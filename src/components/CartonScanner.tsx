@@ -4,6 +4,7 @@ import './CartonScanner.css';
 interface CartonItem {
   returned_carton_number: string;
   inventory_id: string;
+  upc: string;
   description: string;
   expected_qty: number;
 }
@@ -56,6 +57,7 @@ async function fetchCartonDetailsInfo(cartonNumber: string) {
   // Map API response to expected items format
   const items = data.GetCartonResult.map((item: any) => ({
     inventory_id: item.InventoryID?.value || '',
+    upc: item.AlternateID?.value || '',
     expected_qty: item.Quantity?.value || 0,
     returned_carton_number: item.Carton?.value || '',
   }));
@@ -118,8 +120,8 @@ export default function CartonScanner() {
   const handleScan = () => {
     if (!inputBarcode) return;
 
-    // Find if barcode matches an expected item
-    const item = cartonItems.find((i) => i.inventory_id === inputBarcode);
+    // Find if barcode matches an expected item by UPC
+    const item = cartonItems.find((i) => i.upc === inputBarcode);
 
     if (!item) {
       setError(`Unknown barcode: ${inputBarcode}`);
@@ -129,11 +131,11 @@ export default function CartonScanner() {
     
     setScanned((prev) => ({
       ...prev,
-      [inputBarcode]: (prev[inputBarcode] || 0) + 1,
+      [item.inventory_id]: (prev[item.inventory_id] || 0) + 1,
     }));
     
     // Set the last scanned item for highlighting and scrolling
-    setLastScannedItem(inputBarcode);
+    setLastScannedItem(item.inventory_id);
     setInputBarcode('');
     setError('');
   };
@@ -229,7 +231,7 @@ export default function CartonScanner() {
         <div className="flex gap-2">
           <input
             type="text"
-            placeholder="Scan barcode"
+            placeholder="Scan UPC barcode"
             value={inputBarcode}
             onChange={(e) => setInputBarcode(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -250,6 +252,7 @@ export default function CartonScanner() {
           <table className="carton-table">
             <thead className="carton-table-header">
               <tr>
+                <th className="carton-table-header-cell">UPC</th>
                 <th className="carton-table-header-cell">InventoryID</th>
                 <th className="carton-table-header-cell">Quantity</th>
                 <th className="carton-table-header-cell">Scanned Quantity</th>
@@ -268,6 +271,7 @@ export default function CartonScanner() {
                       itemRefs.current[item.inventory_id] = el;
                     }}
                   >
+                    <td className="carton-table-cell">{item.upc}</td>
                     <td className="carton-table-cell">{item.inventory_id}</td>
                     <td className="carton-table-cell">{item.expected_qty}</td>
                     <td className="carton-table-cell">{scannedCount}</td>
