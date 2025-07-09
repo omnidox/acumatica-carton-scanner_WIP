@@ -9,6 +9,14 @@ interface CartonItem {
   expected_qty: number;
 }
 
+interface OverScanState {
+  isActive: boolean;
+  itemId: string;
+  overScanCount: number;
+  returnScanCount: number;
+  itemDetails: CartonItem | null;
+}
+
 // API call to fetch carton information
 async function fetchCartonDetailsInfo(cartonNumber: string) {
   const url =
@@ -26,7 +34,7 @@ async function fetchCartonDetailsInfo(cartonNumber: string) {
       'Accept': 'application/json',
     },
     body: JSON.stringify(body),
-    credentials: 'include', // TODO:what is this? If cookies/session are needed
+    credentials: 'include',
   });
 
   if (!response.ok) {
@@ -81,6 +89,15 @@ export default function CartonScanner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [lastScannedItem, setLastScannedItem] = useState<string | null>(null);
+  
+  // New state for over-scan monitoring
+  const [overScanState, setOverScanState] = useState<OverScanState>({
+    isActive: false,
+    itemId: '',
+    overScanCount: 0,
+    returnScanCount: 0,
+    itemDetails: null
+  });
 
   // Refs for scrolling to items
   const itemRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
@@ -116,9 +133,89 @@ export default function CartonScanner() {
     return statusClasses[status as keyof typeof statusClasses];
   };
 
+  // Check if an item is over-scanned
+  const getOverScanCount = (item: CartonItem) => {
+    const scannedCount = scanned[item.inventory_id] || 0;
+    return Math.max(0, scannedCount - item.expected_qty);
+  };
+
+  // Handle over-scan button click
+  const handleOverScanButtonClick = (item: CartonItem) => {
+    const overScanCount = getOverScanCount(item);
+    setOverScanState({
+      isActive: true,
+      itemId: item.inventory_id,
+      overScanCount: overScanCount,
+      returnScanCount: 0,
+      itemDetails: item
+    });
+  };
+
+  // Handle return scan (putting items back)
+  const handleReturnScan = () => {
+    if (!overScanState.isActive || !overScanState.itemDetails) return;
+
+    const newReturnScanCount = overScanState.returnScanCount + 1;
+    
+    // Apply highlight animation to the item being returned
+    const element = itemRefs.current[overScanState.itemDetails.inventory_id];
+    if (element) {
+      // Remove any existing highlight class first
+      element.classList.remove('carton-item-highlight');
+      
+      // Force a reflow to ensure the class removal is processed
+      element.offsetHeight;
+      
+      // Add a temporary highlight class
+      element.classList.add('carton-item-highlight');
+      
+      // Remove the highlight after 2 seconds
+      setTimeout(() => {
+        element.classList.remove('carton-item-highlight');
+      }, 2000);
+    }
+    
+    if (newReturnScanCount >= overScanState.overScanCount) {
+      // All items have been returned, decrease the scanned count
+      setScanned((prev) => ({
+        ...prev,
+        [overScanState.itemDetails!.inventory_id]: prev[overScanState.itemDetails!.inventory_id] - overScanState.overScanCount,
+      }));
+      
+      // Clear the over-scan state
+      setOverScanState({
+        isActive: false,
+        itemId: '',
+        overScanCount: 0,
+        returnScanCount: 0,
+        itemDetails: null
+      });
+      setError('');
+    } else {
+      // Update return scan count
+      setOverScanState(prev => ({
+        ...prev,
+        returnScanCount: newReturnScanCount
+      }));
+    }
+  };
+
   // Scan barcode and update scanned count
   const handleScan = () => {
     if (!inputBarcode) return;
+
+    // If over-scan monitoring is active, handle return scan
+    if (overScanState.isActive && overScanState.itemDetails) {
+      if (inputBarcode === overScanState.itemDetails.upc) {
+        handleReturnScan();
+        setInputBarcode('');
+        return;
+      } else {
+        setError(`Please scan the correct item (${overScanState.itemDetails.upc}) to return it`);
+        setInputBarcode('');
+        return;
+      }
+    }
 
     // Find if barcode matches an expected item by UPC
     const item = cartonItems.find((i) => i.upc === inputBarcode);
@@ -140,7 +237,7 @@ export default function CartonScanner() {
     setError('');
   };
 
-  // Effect to scroll to the last scanned item
+  // Effect to scroll to the last scanned item and apply highlight
   useEffect(() => {
     if (lastScannedItem && itemRefs.current[lastScannedItem]) {
       const element = itemRefs.current[lastScannedItem];
@@ -152,6 +249,12 @@ export default function CartonScanner() {
           inline: 'nearest'
         });
         
+        // Remove any existing highlight class first
+        element.classList.remove('carton-item-highlight');
+        
+        // Force a reflow to ensure the class removal is processed
+        element.offsetHeight;
+        
         // Add a temporary highlight class
         element.classList.add('carton-item-highlight');
         
@@ -161,7 +264,7 @@ export default function CartonScanner() {
         }, 2000);
       }
     }
-  }, [lastScannedItem]);
+  }, [lastScannedItem, scanned]); // Add scanned to dependencies to trigger on every scan
 
   const fetchCartonDetails = async () => {
     if (cartonNumber == '') {
@@ -172,6 +275,14 @@ export default function CartonScanner() {
     setError('');
     setCartonItems([]);
     setScanned({});
+    // Clear over-scan state when fetching new carton
+    setOverScanState({
+      isActive: false,
+      itemId: '',
+      overScanCount: 0,
+      returnScanCount: 0,
+      itemDetails: null
+    });
     try {
       console.log('Fetching carton:', cartonNumber);
       setLoading(true);
@@ -202,89 +313,122 @@ export default function CartonScanner() {
   // Render
   return (
     <div className="carton-scanner-container">      
-      <div className="flex gap-2">
-        <input
-          type="text"
-          placeholder="Scan carton number"
-          value={cartonNumber}
-          onChange={(e) => setCartonNumber(e.target.value)}
-          onKeyDown={(e) => handleCartonScanKeyDown(e.key)}
-          className="carton-input"
-          autoFocus
-        />
-        <button 
-          onClick={fetchCartonDetails} 
-          className="carton-button-primary"
-          disabled={loading}
-        >
-          {loading ? 'Loading...' : 'Fetch Carton'}
-        </button>
-      </div>
-
-      {error && (
-        <div className="carton-error">
-          {error}
-        </div>
-      )}
-
-      {cartonItems.length > 0 && (
-        <div className="flex gap-2">
+      {/* Fixed Input Pane */}
+      <div className="fixed-input-pane">
+        <div className="flex gap-2 mb-2">
           <input
             type="text"
-            placeholder="Scan UPC barcode"
-            value={inputBarcode}
-            onChange={(e) => setInputBarcode(e.target.value)}
-            onKeyDown={handleKeyDown}
+            placeholder="Scan carton number"
+            value={cartonNumber}
+            onChange={(e) => setCartonNumber(e.target.value)}
+            onKeyDown={(e) => handleCartonScanKeyDown(e.key)}
             className="carton-input"
             autoFocus
           />
           <button 
-            onClick={handleScan} 
-            className="carton-button-success"
+            onClick={fetchCartonDetails} 
+            className="carton-button-primary"
+            disabled={loading}
           >
-            Scan
+            {loading ? 'Loading...' : 'Fetch Carton'}
           </button>
         </div>
-      )}
-      
-      {cartonItems.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="carton-table">
-            <thead className="carton-table-header">
-              <tr>
-                <th className="carton-table-header-cell">UPC</th>
-                <th className="carton-table-header-cell">InventoryID</th>
-                <th className="carton-table-header-cell">Quantity</th>
-                <th className="carton-table-header-cell">Scanned Quantity</th>
-                <th className="carton-table-header-cell">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cartonItems.map((item) => {
-                const scannedCount = scanned[item.inventory_id] || 0;
-                const status = getStatus(item);
-                return (
-                  <tr 
-                    key={item.inventory_id} 
-                    className="carton-table-row"
-                    ref={(el) => {
-                      itemRefs.current[item.inventory_id] = el;
-                    }}
-                  >
-                    <td className="carton-table-cell">{item.upc}</td>
-                    <td className="carton-table-cell">{item.inventory_id}</td>
-                    <td className="carton-table-cell">{item.expected_qty}</td>
-                    <td className="carton-table-cell">{scannedCount}</td>
-                    <td className={getStatusClass(status)}>
-                      {status === 'over' ? 'Over-Scan' : status === 'missing' ? 'Missing' : 'OK'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+
+        {error && (
+          <div className="carton-error">
+            {error}
+          </div>
+        )}
+
+        {cartonItems.length > 0 && (
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              placeholder={overScanState.isActive ? "Scan item to return" : "Scan UPC barcode"}
+              value={inputBarcode}
+              onChange={(e) => setInputBarcode(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="carton-input"
+              autoFocus
+            />
+            <button 
+              onClick={handleScan} 
+              className="carton-button-success"
+            >
+              {overScanState.isActive ? 'Return Item' : 'Scan'}
+            </button>
+          </div>
+        )}
+
+        {/* Over-scan Monitoring Display */}
+        {overScanState.isActive && overScanState.itemDetails && (
+          <div className="overscan-monitoring">
+            <div className="overscan-error">
+              {overScanState.overScanCount} item(s) over-scanned for {overScanState.itemDetails.inventory_id}. 
+              Please put them back and re-scan the item.
+            </div>
+            <div className="overscan-progress">
+              Returned: {overScanState.returnScanCount} / {overScanState.overScanCount}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Scrollable Content Area */}
+      <div className="scrollable-content">
+        {cartonItems.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="carton-table">
+              <thead className="carton-table-header">
+                <tr>
+                  <th className="carton-table-header-cell">UPC</th>
+                  <th className="carton-table-header-cell">InventoryID</th>
+                  <th className="carton-table-header-cell">Quantity</th>
+                  <th className="carton-table-header-cell">Scanned Quantity</th>
+                  <th className="carton-table-header-cell">Status</th>
+                  <th className="carton-table-header-cell">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cartonItems.map((item) => {
+                  const scannedCount = scanned[item.inventory_id] || 0;
+                  const status = getStatus(item);
+                  const overScanCount = getOverScanCount(item);
+                  const isOverScanned = overScanCount > 0;
+                  
+                  return (
+                    <tr 
+                      key={item.inventory_id} 
+                      className="carton-table-row"
+                      ref={(el) => {
+                        itemRefs.current[item.inventory_id] = el;
+                      }}
+                    >
+                      <td className="carton-table-cell">{item.upc}</td>
+                      <td className="carton-table-cell">{item.inventory_id}</td>
+                      <td className="carton-table-cell">{item.expected_qty}</td>
+                      <td className="carton-table-cell">{scannedCount}</td>
+                      <td className={getStatusClass(status)}>
+                        {status === 'over' ? 'Over-Scan' : status === 'missing' ? 'Missing' : 'OK'}
+                      </td>
+                      <td className="carton-table-cell">
+                        {isOverScanned && !overScanState.isActive && (
+                          <button 
+                            onClick={() => handleOverScanButtonClick(item)}
+                            className="overscan-button"
+                          >
+                            Handle Over-Scan ({overScanCount})
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 } 

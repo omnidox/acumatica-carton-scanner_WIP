@@ -17,7 +17,7 @@ function App() {
   return (
     <div className="App">
       {/* Header with Login/Logout in upper right */}
-      <div className="bg-gray-100 border-b p-4">
+      <div className="bg-gray-100 border-b p-4 flex-shrink-0">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-xs font-bold">Acumatica Carton Scanner</h1>
           {isLoggedIn ? (
@@ -33,11 +33,13 @@ function App() {
         </div>
       </div>
 
-      <div className="container mx-auto p-4">
+      <div className="flex-1">
         {isLoggedIn ? (
           <CartonScanner />
         ) : (
-          <Login onLoginSuccess={handleLoginSuccess} />
+          <div className="container mx-auto p-4">
+            <Login onLoginSuccess={handleLoginSuccess} />
+          </div>
         )}
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 /* CartonScanner Component Styles */
 .carton-scanner-container {
-  max-width: 36rem;
+  max-width: 100%;
   margin: 0 auto;
   padding: 1rem;
   display: flex;
@@ -11,6 +11,111 @@
   /* Enable GPU acceleration */
   transform: translateZ(0);
   will-change: transform;
+}
+
+/* Fixed Input Pane */
+.fixed-input-pane {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 1rem;
+  margin: -1rem -1rem 1rem -1rem;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Optimize for performance */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Scrollable Content Area */
+.scrollable-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  /* Optimize scrolling performance */
+  transform: translateZ(0);
+  will-change: scroll-position;
+  /* Show scrollbar only when needed */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Custom scrollbar for webkit browsers */
+.scrollable-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.scrollable-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.scrollable-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Over-scan Monitoring */
+.overscan-monitoring {
+  background-color: #fef2f2;
+  border: 2px solid #fecaca;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  /* Optimize for performance */
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.overscan-error {
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  /* Optimize for performance */
+  transform: translateZ(0);
+}
+
+.overscan-progress {
+  color: #7c3aed;
+  font-weight: 500;
+  font-size: 0.875rem;
+  text-align: center;
+  background-color: #f3f4f6;
+  padding: 0.5rem;
+  border-radius: 0.375rem;
+  /* Optimize for performance */
+  transform: translateZ(0);
+}
+
+/* Over-scan Button */
+.overscan-button {
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  padding: 0.375rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  /* Optimize for performance */
+  transform: translateZ(0);
+  will-change: transform, background-color;
+}
+
+.overscan-button:hover {
+  background-color: #b91c1c;
+  transform: translateZ(0) scale(1.05);
+}
+
+.overscan-button:active {
+  transform: translateZ(0) scale(0.95);
 }
 
 .carton-input {
@@ -183,6 +288,28 @@
   will-change: scroll-position;
   /* Use CSS containment for better performance */
   contain: layout style paint;
+  /* Show horizontal scrollbar only when needed */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Custom horizontal scrollbar */
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Optimize for high DPI displays */
