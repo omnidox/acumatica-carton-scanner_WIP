@@ -99,6 +99,8 @@ export default function CartonScanner() {
     itemDetails: null
   });
 
+  const [sessionError, setSessionError] = useState('');
+
   // Refs for scrolling to items
   const itemRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
 
@@ -273,6 +275,7 @@ export default function CartonScanner() {
       return;
     }
     setError('');
+    setSessionError('');
     setCartonItems([]);
     setScanned({});
     // Clear over-scan state when fetching new carton
@@ -304,7 +307,12 @@ export default function CartonScanner() {
       }
     } catch (e) {
       console.error('Exception caught:', e);
-      setError('Failed to fetch carton info.');
+      const message = e instanceof Error ? e.message : String(e);
+      if (message.includes('401 Unauthorized')) {
+        setSessionError('Your session has expired. Please log in again.');
+      } else {
+        setError('Failed to fetch carton info.');
+      }
     } finally {
       setLoading(false);
     }
@@ -334,6 +342,9 @@ export default function CartonScanner() {
           </button>
         </div>
 
+        {sessionError && (
+          <div className="login-error">{sessionError}</div>
+        )}
         {error && (
           <div className="carton-error">
             {error}
