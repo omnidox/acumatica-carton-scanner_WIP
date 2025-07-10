@@ -319,4 +319,10 @@
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
+}
+
+.login-error {
+  color: red;
+  text-align: center;
+  margin-bottom: 0.5rem;
 } 

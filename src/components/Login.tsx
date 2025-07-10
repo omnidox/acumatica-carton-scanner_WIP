@@ -10,9 +10,6 @@ async function loginToAcumatica(username: string, password: string, tenant: stri
     tenant: tenant,
   };
 
-  console.log('Making login request to:', url);
-  console.log('Request body:', { name: username, tenant, password: '***' });
-
   const response = await fetch(url, {
     method: 'POST',
     headers: {
@@ -20,15 +17,14 @@ async function loginToAcumatica(username: string, password: string, tenant: stri
       'Accept': 'application/json',
     },
     body: JSON.stringify(body),
-    credentials: 'include', // Important for session cookies
+    credentials: 'include',
   });
 
-  console.log('Response status:', response.status);
-  console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+  // console.log('Response status:', response.status);
+  // console.log('Response status text:', response.statusText);
+  // console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
-  // Get the response text first to see what we're actually getting
   const responseText = await response.text();
-  console.log('Raw response text:', responseText);
 
   if (!response.ok) {
     console.error('Login failed with response:', responseText);
@@ -37,21 +33,19 @@ async function loginToAcumatica(username: string, password: string, tenant: stri
 
   // Try to parse as JSON, but handle non-JSON responses
   let result;
-  try {
-    result = JSON.parse(responseText);
-    console.log('Login response (parsed):', result);
-  } catch (parseError) {
-    console.error('Failed to parse response as JSON:', parseError);
-    console.log('Response was not valid JSON. Raw response:', responseText);
-    // If it's not JSON but the status is OK, we might still be logged in
-    if (responseText.trim() === '') {
-      result = { success: true, message: 'Login successful (empty response)' };
-    } else {
+  console.log(1)
+  if (responseText.trim() === '') {
+    result = { success: true, message: 'Login successful (empty response)' };
+  } else {
+    try {
+      result = JSON.parse(responseText);
+      console.log('Login response (parsed):', result);
+    } catch (parseError) {
+      console.error('Failed to parse response as JSON:', parseError);
+      console.log('Response was not valid JSON. Raw response:', responseText);
       throw new Error(`Invalid response format: ${responseText.substring(0, 200)}...`);
     }
   }
-
-  return result;
 }
 
 interface LoginProps {
@@ -61,13 +55,13 @@ interface LoginProps {
 export default function Login({ onLoginSuccess }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [tenant, setTenant] = useState('UAT 2025');
+  const [tenant, setTenant] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   const handleLogin = async () => {
-    if (!username.trim() || !password.trim()) {
-      setLoginError('Please enter both username and password.');
+    if (!username.trim() || !password.trim() || !tenant.trim()) {
+      setLoginError('Please enter username, password and tenant.');
       return;
     }
 
@@ -129,7 +123,7 @@ export default function Login({ onLoginSuccess }: LoginProps) {
           {loginLoading ? 'Logging in...' : 'Login'}
         </button>
       </div>
-      {loginError && <div className="text-red-500 mb-2 text-center">{loginError}</div>}
+      {loginError && <div className="login-error">{loginError}</div>}
     </div>
   );
 } 
