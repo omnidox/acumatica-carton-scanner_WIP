@@ -7,7 +7,7 @@ async function loginToAcumatica(username: string, password: string, tenant: stri
   const body = {
     name: username,
     password: password,
-    tenant: tenant,
+    company: tenant,
   };
 
   const response = await fetch(url, {
