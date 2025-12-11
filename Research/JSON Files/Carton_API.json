@@ -63069,6 +63069,9 @@
                 }
               },
               "GetCartonResult": {
+                "_comment": {
+                  "description": "The result of a carton inquiry. React grabs this from the server and uses it to update the UI. - Rafael"
+                },
                 "type": "array",
                 "items": {
                   "$ref": "#/components/schemas/GetCartonResult"
@@ -70640,6 +70643,9 @@
             "$ref": "#/components/schemas/Entity"
           },
           {
+            "_comment": {
+              "description": "The result of a carton inquiry. React grabs this from the server and uses it to update the UI. - Rafael"
+            },
             "type": "object",
             "properties": {
               "InventoryID": {
@@ -70649,6 +70655,9 @@
                 "$ref": "#/components/schemas/DecimalValue"
               },
               "Carton": {
+                "$ref": "#/components/schemas/StringValue"
+              },
+              "AlternateID": {
                 "$ref": "#/components/schemas/StringValue"
               }
             }
