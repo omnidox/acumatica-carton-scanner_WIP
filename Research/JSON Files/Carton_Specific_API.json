@@ -1,0 +1,522 @@
+{
+  "paths": {
+    "/Carton/{actionName}": {
+      "post": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Performs an action in the system.",
+        "operationId": "Carton_InvokeAction_CustomAction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/actionName"
+          }
+        ],
+        "requestBody": {
+          "description": "The record to which the action should be applied and the parameters of the action.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartonCustomAction"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CartonCustomAction"
+              }
+            }
+          },
+          "required": true,
+          "x-bodyName": "invocation"
+        },
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "204": {
+            "$ref": "#/components/responses/InvokeAction_204"
+          },
+          "202": {
+            "$ref": "#/components/responses/InvokeAction_202"
+          },
+          "400": {
+            "$ref": "#/components/responses/InvokeAction_400"
+          },
+          "412": {
+            "$ref": "#/components/responses/InvokeAction_412"
+          },
+          "422": {
+            "description": "The data specified in the request is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Carton/$adHocSchema": {
+      "get": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Retrieves the schema of custom fields of the entity from the system.",
+        "operationId": "Carton_GetAdHocSchema",
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "200": {
+            "description": "The field name, view name, and type of the fields that are not defined in the contract of the endpoint for this entity.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Carton/{ids}": {
+      "get": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Retrieves a record by the values of its key fields from the system.",
+        "operationId": "Carton_GetByKeys",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ids"
+          },
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/expand"
+          },
+          {
+            "$ref": "#/components/parameters/custom"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "200": {
+            "description": "The requested record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Deletes the record by the values of its key fields.",
+        "operationId": "Carton_DeleteByKeys",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ids"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "204": {
+            "$ref": "#/components/responses/DeleteByKeys_204"
+          }
+        }
+      }
+    },
+    "/Carton/{ids}/files/{filename}": {
+      "put": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Attaches a file to a record.",
+        "operationId": "Carton_PutFile",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ids"
+          },
+          {
+            "$ref": "#/components/parameters/filename"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "204": {
+            "$ref": "#/components/responses/PutFile_204"
+          }
+        }
+      }
+    },
+    "/Carton/{id}": {
+      "get": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Retrieves a record by the value of the session entity ID from the system.",
+        "operationId": "Carton_GetById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/id"
+          },
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/expand"
+          },
+          {
+            "$ref": "#/components/parameters/custom"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "200": {
+            "description": "The requested record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Deletes the record by its session identifier.",
+        "operationId": "Carton_DeleteById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/id"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "204": {
+            "$ref": "#/components/responses/DeleteById_204"
+          }
+        }
+      }
+    },
+    "/Carton": {
+      "get": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Retrieves records that satisfy the specified conditions from the system.",
+        "operationId": "Carton_GetList",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/expand"
+          },
+          {
+            "$ref": "#/components/parameters/custom"
+          },
+          {
+            "$ref": "#/components/parameters/skip"
+          },
+          {
+            "$ref": "#/components/parameters/top"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "200": {
+            "description": "The list of records that satisfy the specified conditions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Carton"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Carton"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Carton"
+        ],
+        "summary": "Creates a record or updates an existing record.",
+        "operationId": "Carton_PutEntity",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/select"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/expand"
+          },
+          {
+            "$ref": "#/components/parameters/custom"
+          }
+        ],
+        "requestBody": {
+          "description": "The record to be passed to the system.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Carton"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Carton"
+              }
+            }
+          },
+          "required": true,
+          "x-bodyName": "entity"
+        },
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_401"
+          },
+          "500": {
+            "$ref": "#/components/responses/ContractBasedControllerBase_500"
+          },
+          "200": {
+            "description": "The created or updated record.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/PutEntity_400"
+          },
+          "412": {
+            "$ref": "#/components/responses/PutEntity_412"
+          },
+          "422": {
+            "description": "The data specified in the request is invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Carton"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Carton": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "CartonDetails": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/CartonDetail"
+                }
+              },
+              "GetCartonResult": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/GetCartonResult"
+                }
+              },
+              "carton_nbr": {
+                "$ref": "#/components/schemas/StringValue"
+              }
+            }
+          }
+        ]
+      },
+      "CartonCustomAction": {
+        "required": [
+          "entity"
+        ],
+        "type": "object",
+        "properties": {
+          "entity": {
+            "$ref": "#/components/schemas/Carton"
+          },
+          "parameters": {
+            "type": "object",
+            "description": "The parameters of the action.",
+            "properties": {
+              "custom": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/CustomField"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "CartonDetail": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ShipmentNbr": {
+                "$ref": "#/components/schemas/StringValue"
+              },
+              "InventoryID": {
+                "$ref": "#/components/schemas/StringValue"
+              },
+              "Quantity": {
+                "$ref": "#/components/schemas/DecimalValue"
+              }
+            }
+          }
+        ]
+      },
+      "GetCartonResult": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Entity"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "InventoryID": {
+                "$ref": "#/components/schemas/StringValue"
+              },
+              "Quantity": {
+                "$ref": "#/components/schemas/DecimalValue"
+              },
+              "Carton": {
+                "$ref": "#/components/schemas/StringValue"
+              },
+              "AlternateID": {
+                "$ref": "#/components/schemas/StringValue"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Carton",
+      "description": "PackageContentQuery (GI990395)"
+    }
+  ]
+}
