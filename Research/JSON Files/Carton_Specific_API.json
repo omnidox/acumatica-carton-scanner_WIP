@@ -1,4 +1,15 @@
 {
+  "openapi": "3.0.1",
+  "info": {
+    "title": "CartonValidation/24.200.001",
+    "version": "4"
+  },
+  "servers": [
+    {
+      "url": "https://istar.privatecloudcorp.com/AcumaticaERP/entity/CartonValidation/24.200.001"
+    }
+  ],
+
   "paths": {
     "/Carton/{actionName}": {
       "post": {
